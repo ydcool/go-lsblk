@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	go_lsblk "github.com/ydcool/go-lsblk"
+	golsblk "github.com/ydcool/go-lsblk"
 	"log"
 )
 
 func main() {
-	devices, err := go_lsblk.ListBlockDevice()
+	devices, err := golsblk.ListBlockDevice()
 	if err != nil {
 		log.Fatalln(err)
 	}

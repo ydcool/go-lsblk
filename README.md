@@ -12,6 +12,8 @@ usage instructions, and other relevant information about the project.
 ### List Block Devices
 
 The main feature is to list the block devices in the system through Go language code. For example,
-the `main.go` file in the example directory showcases a sample program that calls the `go-lsblk` library to fetch and
+the [main.go](example/main.go) file in the [example](example) directory showcases a sample program that calls
+the `go-lsblk`
+library to fetch and
 print
 block device information.
