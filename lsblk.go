@@ -15,7 +15,7 @@ type BlockDeviceInfo struct {
 	FSType             string `json:"fsType" col:"FSTYPE"`                  // filesystem type
 	FSUsed             string `json:"fsUsed" col:"FSUSED"`                  // filesystem size used
 	FSUsedPercentage   string `json:"fsUsedPercent" col:"FSUSE%"`           // filesystem use percentage
-	FSRoots            string `json:"FSRoots" col:"FSROOTS"`                // mounted filesystem roots
+	FSRoots            string `json:"fsRoots" col:"FSROOTS"`                // mounted filesystem roots
 	FSVersion          string `json:"fsVersion" col:"FSVER"`                // filesystem version
 	MountPoint         string `json:"mountPoint" col:"MOUNTPOINT"`          // where the device is mounted
 	MountPoints        string `json:"mountPoints" col:"MOUNTPOINTS"`        // all locations where device is mounted
@@ -63,6 +63,8 @@ type BlockDeviceInfo struct {
 	Vendor             string `json:"vendor" col:"VENDOR"`                  // device vendor
 	Zoned              string `json:"zoned" col:"ZONED"`                    // zone model
 	Dax                string `json:"dax" col:"DAX"`                        // dax-capable device
+
+	Children []BlockDeviceInfo `json:"children"` // children devices
 }
 
 func (b BlockDeviceInfo) GetSize() (int64, error) {

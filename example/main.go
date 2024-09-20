@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	devices, err := golsblk.ListBlockDevice()
+	devices, err := golsblk.ListBlockDeviceAsTree()
 	if err != nil {
 		log.Fatalln(err)
 	}

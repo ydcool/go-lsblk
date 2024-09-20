@@ -36,11 +36,13 @@ func ListBlockDevice() ([]BlockDeviceInfo, error) {
 			key := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])
 			if len(parts) > 2 {
-				value = strings.Join(parts[1:], "")
+				value = strings.Join(parts[1:], "=")
 			}
-			if key == "" || value == "" {
+			if key == "" || value == "" || value == `""` {
 				continue
 			}
+			value = strings.TrimPrefix(value, `"`)
+			value = strings.TrimSuffix(value, `"`)
 			dType := reflect.TypeOf(disk)
 			for i := 0; i < dType.NumField(); i++ {
 				dField := dType.Field(i)
@@ -48,7 +50,7 @@ func ListBlockDevice() ([]BlockDeviceInfo, error) {
 					fieldValue := reflect.ValueOf(&disk).Elem().FieldByName(dField.Name)
 					fieldValue.SetString(value)
 					diskNotEmpty = true
-					continue
+					break
 				}
 			}
 		}
@@ -62,4 +64,28 @@ func ListBlockDevice() ([]BlockDeviceInfo, error) {
 	}
 
 	return disks, nil
+}
+
+func ListBlockDeviceAsTree() ([]BlockDeviceInfo, error) {
+	devices, err := ListBlockDevice()
+	if err != nil {
+		return nil, err
+	}
+	return buildTree("", devices), nil
+}
+
+func buildTree(pkName string, devices []BlockDeviceInfo) []BlockDeviceInfo {
+	pDevs := make([]BlockDeviceInfo, 0)
+	leftDevs := make([]BlockDeviceInfo, 0)
+	for _, dev := range devices {
+		if dev.ParentKernelName == pkName {
+			pDevs = append(pDevs, dev)
+		} else {
+			leftDevs = append(leftDevs, dev)
+		}
+	}
+	for i := range pDevs {
+		pDevs[i].Children = buildTree(pDevs[i].KernelName, leftDevs)
+	}
+	return pDevs
 }
