@@ -24,7 +24,8 @@ func ListBlockDevice() ([]BlockDeviceInfo, error) {
 			continue
 		}
 		disk := BlockDeviceInfo{}
-		diskNotEmpty := false
+		dType := reflect.TypeOf(disk)
+		diskAssigned := false
 		for _, kvPair := range fields {
 			if !strings.Contains(kvPair, "=") {
 				continue
@@ -33,28 +34,31 @@ func ListBlockDevice() ([]BlockDeviceInfo, error) {
 			if len(parts) < 2 {
 				continue
 			}
-			key := strings.TrimSpace(parts[0])
-			value := strings.TrimSpace(parts[1])
+
+			var key, value string
+			key = strings.TrimSpace(parts[0])
 			if len(parts) > 2 {
-				value = strings.Join(parts[1:], "=")
+				value = strings.TrimSpace(strings.Join(parts[1:], "="))
+			} else {
+				value = strings.TrimSpace(parts[1])
 			}
+
 			if key == "" || value == "" || value == `""` {
 				continue
 			}
-			value = strings.TrimPrefix(value, `"`)
-			value = strings.TrimSuffix(value, `"`)
-			dType := reflect.TypeOf(disk)
+
+			value = strings.TrimSuffix(strings.TrimPrefix(value, `"`), `"`)
 			for i := 0; i < dType.NumField(); i++ {
 				dField := dType.Field(i)
 				if dField.Tag.Get("col") == key {
 					fieldValue := reflect.ValueOf(&disk).Elem().FieldByName(dField.Name)
 					fieldValue.SetString(value)
-					diskNotEmpty = true
+					diskAssigned = true
 					break
 				}
 			}
 		}
-		if diskNotEmpty {
+		if diskAssigned {
 			disks = append(disks, disk)
 		}
 	}
