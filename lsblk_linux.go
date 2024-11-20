@@ -9,7 +9,7 @@ import (
 )
 
 func ListBlockDevice() ([]BlockDeviceInfo, error) {
-	cmd := exec.Command("lsblk", "-P", "-b", "-O")
+	cmd := exec.Command("lsblk", "--pairs", "--bytes", "--output-all")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to execute lsblk")
