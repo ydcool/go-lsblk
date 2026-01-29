@@ -8,6 +8,76 @@ import (
 	"strings"
 )
 
+func parseKeyValuePairs(line string) map[string]string {
+	result := make(map[string]string)
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return result
+	}
+
+	var key, value string
+	var inQuotes bool
+	var current strings.Builder
+	var state int // 0: looking for key, 1: in key, 2: looking for =, 3: looking for value, 4: in value
+
+	for _, r := range line {
+		switch state {
+		case 0:
+			if r != ' ' {
+				current.WriteRune(r)
+				state = 1
+			}
+		case 1:
+			if r == '=' {
+				key = current.String()
+				current.Reset()
+				state = 3
+			} else {
+				current.WriteRune(r)
+			}
+		case 3:
+			if r == '"' {
+				inQuotes = true
+				state = 4
+			} else if r != ' ' {
+				current.WriteRune(r)
+				state = 4
+			}
+		case 4:
+			if inQuotes {
+				if r == '"' {
+					inQuotes = false
+					value = current.String()
+					current.Reset()
+					result[key] = value
+					state = 0
+				} else {
+					current.WriteRune(r)
+				}
+			} else {
+				if r == ' ' {
+					value = current.String()
+					current.Reset()
+					result[key] = value
+					state = 0
+				} else {
+					current.WriteRune(r)
+				}
+			}
+		}
+	}
+
+	// Handle last key-value pair if line ends without space
+	if key != "" && (state == 4 || current.Len() > 0) {
+		if current.Len() > 0 {
+			value = current.String()
+		}
+		result[key] = value
+	}
+
+	return result
+}
+
 func ListBlockDevice() ([]BlockDeviceInfo, error) {
 	cmd := exec.Command("lsblk", "--pairs", "--bytes", "--output-all")
 	out, err := cmd.CombinedOutput()
@@ -19,30 +89,14 @@ func ListBlockDevice() ([]BlockDeviceInfo, error) {
 	scanner := bufio.NewScanner(strings.NewReader(string(out)))
 	for scanner.Scan() {
 		line := scanner.Text()
-		fields := strings.Fields(line)
-		if len(fields) < 2 || fields[0] == "NAME" {
+		fields := parseKeyValuePairs(line)
+		if len(fields) < 2 || fields["NAME"] == "" {
 			continue
 		}
 		disk := BlockDeviceInfo{}
 		dType := reflect.TypeOf(disk)
 		diskAssigned := false
-		for _, kvPair := range fields {
-			if !strings.Contains(kvPair, "=") {
-				continue
-			}
-			parts := strings.Split(kvPair, "=")
-			if len(parts) < 2 {
-				continue
-			}
-
-			var key, value string
-			key = strings.TrimSpace(parts[0])
-			if len(parts) > 2 {
-				value = strings.TrimSpace(strings.Join(parts[1:], "="))
-			} else {
-				value = strings.TrimSpace(parts[1])
-			}
-
+		for key, value := range fields {
 			if key == "" || value == "" || value == `""` {
 				continue
 			}
